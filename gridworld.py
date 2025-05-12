@@ -168,6 +168,8 @@ def q_learning(env, gamma, max_iterations, logger):
     max_iterations: integer
         the maximum number of iterations (either training episodes or total steps) that should be performed;
         the algorithm should terminate when max_iterations is exceeded.
+        ** note from nate --- this is a boundary that can be applied to episodes & steps
+           its a "GLOBAL TRAINING LIMIT"
     logger: app.grid_world.App.Logger
         a logger instance to perform test and record the iteration process.
     
@@ -195,11 +197,67 @@ def q_learning(env, gamma, max_iterations, logger):
     alpha = 0.1
     #########################
 
+    steps = 0
     
 
 ### Please finish the code below ##############################################
 ###############################################################################
+    # Nate --- WARNING IMMA COMMENT A LOT TO UNDERSTAND
 
+    eps_min = 0.1
+    eps_decay = 0.999 # exponential decay
+
+    # Initialize Q(s,a) for all s, a
+    Q = []
+    for i in range(NUM_STATES):
+        row = [0.0] * NUM_ACTIONS
+        Q.append(row)
+    #repeat for each episode
+    while steps < max_iterations:
+        #get initial state s
+        s = env.reset() # env API call to reset environment
+        terminal = False # we in start state so its never terminal
+        #repeat for each step
+        while not terminal and steps < max_iterations:
+            #sample action a from s, observe reward r and next state s_
+            if random.random() < eps: # epsilon greedy action selection || probability epsilon
+                # pick a random action from the range of NUM_ACTIONS
+                a = random.randint(0, NUM_ACTIONS - 1) 
+            else: # probability 1-epsilon
+                # among all valid actions [0,1,...,n-1], choose the one x that gives 
+                # the highest Q[s][x]
+                a = max(range(NUM_ACTIONS), key=lambda x: Q[s][x])
+                # explanation of line of code above ^^
+                # Why range?? --- creates a list to choose from
+                # of all possible action indices
+                # Lambda --- for each action x (like 0,1,2...), evaluate 
+                # Q[s][x] and use that value to determine which x is the best
+
+            #take action
+            s_, r, terminal, _ = env.step(a)
+
+            #compute target for Q-update
+            if terminal:
+                target = r # no future reward
+            else:
+                #Bellman target
+                target = r + gamma * max(Q[s_])
+
+            #update Q-value
+            Q[s][a] = (1-alpha) * Q[s][a] + alpha * target # Q-learning update formula
+
+            s = s_
+            steps += 1
+
+            #epsilon decay
+            eps = max(eps_min, eps * eps_decay)
+
+    #extract policy and value function
+    for s in range(NUM_STATES):
+        pi[s] = max(range(NUM_ACTIONS), key=lambda a: Q[s][a])
+        v[s] = max(Q[s])
+
+    logger.log(1,v,pi)
 ###############################################################################
     return pi
 

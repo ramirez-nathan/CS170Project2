@@ -80,9 +80,48 @@ def q_learning(env, logger):
 
 ### Please finish the code below ##############################################
 ###############################################################################
+    eps_min = 0.1
+    eps_decay = 0.999
 
+    v = [0] * NUM_STATES
+    pi = [0] * NUM_STATES
+
+    steps = 0
+
+    #shorthand python instead of the for loop
+    Q = [[0.0] * NUM_ACTIONS for _ in range(NUM_STATES)] 
+    # same code as the gridworld.py's q-learning, im gonna put it without
+    # the comments this time
+    while steps < max_iterations:
+        s = env.reset()
+        terminal = False
+
+        while not terminal and steps < max_iterations:
+            if random.random() < eps:
+                a = random.randint(0, NUM_ACTIONS - 1)
+            else:
+                a = max(range(NUM_ACTIONS), key=lambda x: Q[s][x])
+
+            s_, r, terminal, _ = env.step(a)
+
+            if terminal:
+                target = r
+            else:
+                target = r + gamma * max(Q[s_])
+
+            Q[s][a] = (1 - alpha) * Q[s][a] + alpha * target
+
+            s = s_
+            steps += 1
+            eps = max(eps_min, eps * eps_decay)
+
+    for s in range(NUM_STATES):
+        pi[s] = max(range(NUM_ACTIONS), key=lambda a: Q[s][a])
+        v[s] = max(Q[s])
+
+    logger.log(1, v, pi)
+    return pi
 ###############################################################################
-    return None
 
 
 if __name__ == "__main__":
