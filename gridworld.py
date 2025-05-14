@@ -95,7 +95,36 @@ def value_iteration(env, gamma, max_iterations, logger):
    
 ### Please finish the code below ##############################################
 ###############################################################################
-
+#Ashton
+    for iteration in range(1, max_iterations + 1):
+        v_new = v[:]
+        #Bellman update
+        for s in range(NUM_STATES):
+            max_value = float('-inf')
+            best_action = None
+            
+            #Look through all actions to find the best value
+            for a in range(NUM_ACTIONS):
+                value = 0
+                for p, s_, r, terminal in TRANSITION_MODEL[s][a]:
+                    value += p * (r + gamma * v[s_] * (1 - terminal))
+                
+                if value > max_value:
+                    max_value = value
+                    best_action = a
+            
+            #Update the value
+            v_new[s] = max_value
+            pi[s] = best_action 
+        
+        #If the value function has converged
+        if max(abs(v_new[i] - v[i]) for i in range(NUM_STATES)) < 1e-4:
+            print(f"Value iteration converged after {iteration} iterations.")
+            break
+        
+        v = v_new[:]
+        
+        logger.log(iteration, v, pi)
 ###############################################################################
     return pi
 
@@ -146,7 +175,48 @@ def policy_iteration(env, gamma, max_iterations, logger):
 
 ### Please finish the code below ##############################################
 ###############################################################################
+#Ashton
+    for iteration in range(1, max_iterations + 1):
+        #Calculate the value function
+        while True:
+            v_new = v[:]
+            #Bellman update
+            for s in range(NUM_STATES):
+                action = pi[s]
+                value = 0
+                for p, s_, r, terminal in TRANSITION_MODEL[s][action]:
+                    value += p * (r + gamma * v[s_] * (1 - terminal))
+                v_new[s] = value
 
+            #Check for convergence
+            if max(abs(v_new[i] - v[i]) for i in range(NUM_STATES)) < 1e-4:
+                break
+            v = v_new[:]
+        
+        #Update the policy
+        policy_stable = True
+        for s in range(NUM_STATES):
+            old_action = pi[s]
+            max_value = float('-inf')
+            best_action = None
+            for a in range(NUM_ACTIONS):
+                value = 0
+                for p, s_, r, terminal in TRANSITION_MODEL[s][a]:
+                    value += p * (r + gamma * v[s_] * (1 - terminal))
+                if value > max_value:
+                    max_value = value
+                    best_action = a
+            pi[s] = best_action
+
+            #If the policy is not stable, continue the process. Else stop
+            if old_action != pi[s]:
+                policy_stable = False
+
+        if policy_stable:
+            print(f"Policy iteration converged after {iteration} iterations.")
+            break
+
+        logger.log(iteration, v, pi)
 ###############################################################################
     return pi
 
