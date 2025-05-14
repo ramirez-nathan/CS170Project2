@@ -198,7 +198,6 @@ def q_learning(env, gamma, max_iterations, logger):
     #########################
 
     steps = 0
-    
 
 ### Please finish the code below ##############################################
 ###############################################################################
@@ -251,13 +250,19 @@ def q_learning(env, gamma, max_iterations, logger):
 
             #epsilon decay
             eps = max(eps_min, eps * eps_decay)
+            #for GUI
+            if steps % 500 == 0 or steps == 1:
+                for state in range(NUM_STATES):
+                    v[state] = max(Q[state])
+                    pi[state] = max(range(NUM_ACTIONS), key=lambda a: Q[state][a])
+                logger.log(steps, v, pi)
 
     #extract policy and value function
     for s in range(NUM_STATES):
         pi[s] = max(range(NUM_ACTIONS), key=lambda a: Q[s][a])
         v[s] = max(Q[s])
 
-    logger.log(1,v,pi)
+    logger.log(steps,v,pi)
 ###############################################################################
     return pi
 
